@@ -1,6 +1,0 @@
-﻿  Boid.cpp
-C:\Users\avita\Desktop\AI Frameworks\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(6,34): warning C4100: 'ForceMax': unreferenced formal parameter
-C:\Users\avita\Desktop\AI Frameworks\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(6,18): warning C4100: 'SpeedMax': unreferenced formal parameter
-C:\Users\avita\Desktop\AI Frameworks\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(108,59): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
-C:\Users\avita\Desktop\AI Frameworks\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(133,57): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
-  Boids.vcxproj -> C:\Users\avita\Desktop\AI Frameworks\Fish Schooling 3.0 Student - 15 marks\x64\Debug\Boids.exe

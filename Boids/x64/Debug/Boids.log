@@ -1,0 +1,14 @@
+﻿  Boid.cpp
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(5,34): warning C4100: 'ForceMax': unreferenced formal parameter
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(5,18): warning C4100: 'SpeedMax': unreferenced formal parameter
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(165,59): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(192,57): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(325,13): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(382,89): warning C4100: 'boidList': unreferenced formal parameter
+  main.cpp
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(94,55): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(94,38): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(104,9): warning C4189: 'y': local variable is initialized but not referenced
+C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(103,9): warning C4189: 'x': local variable is initialized but not referenced
+  Generating Code...
+  Boids.vcxproj -> C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\x64\Debug\Boids.exe
