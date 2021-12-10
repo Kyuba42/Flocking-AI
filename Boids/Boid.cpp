@@ -1,29 +1,77 @@
 #include "Boid.h"
 
-#define NEARBY_DISTANCE		100.0f	// how far boids can see
+//ImGui Globals
+vector<Boid*>	g_deadBoids;
+
+bool					alignmentActive;
+bool					cohesionActive;
+bool					seperationActive;
+bool					avoidanceActive;
+
+int					alignmentOffsetMultiplyer = 1;
+int					cohesionOffsetMultiplyer = 1;
+int					separationOffsetMultiplyer = 1;
+int					avoidanceOffsetMultiplyer = 1;
 
 Boid::Boid(float SpeedMax, float ForceMax,bool Predator)
 {
-	//this->m_position = XMFLOAT3(0, 0, 0);
 	this->predator = Predator;
-	this->m_offscreen = false;
-	
+
 	if (predator)
 	{
-		DrawableGameObject::m_scale = 2.0f;
+		DrawableGameObject::m_scale = 2.f;
 		createRandomDirection();
-		speed = 60.0f;
+		speed = 60.f;
+		target = nullptr;
+		BOID_FOV = 180.f;
+		nearbyDistance = 100.f;
 	}
 	else
 	{
+		alignmentActive = true;
+		cohesionActive = true;
+		seperationActive = true;
+		avoidanceActive = true;
+
 		DrawableGameObject::m_scale = 1.0f;
 		createRandomDirection();
-		speed = 75.0f + (rand() % 20 - 10);
+
+		b_maxStam = 250;
+		b_Stamina = 250;// = 250.0f;
+
+		speed = 70;// = 75.0f;
+		BOID_FOV = 180;// = 180.0f;
+		nearbyDistance =100;// = 100.0f;	// how far boids can see
 	}
 }
 
 Boid::~Boid()
 {
+}
+
+void Boid::StartTest(int x, int y)
+{
+	alignmentActive = true;
+	cohesionActive = true;
+	seperationActive = true;
+	avoidanceActive = true;
+
+	alignmentOffsetMultiplyer = 1;
+	cohesionOffsetMultiplyer = 1;
+	separationOffsetMultiplyer = 1;
+	avoidanceOffsetMultiplyer = 1;
+
+	createRandomDirection();
+
+	b_maxStam = rand() % 200 + 1;
+	speed = rand() % 100 + 1;
+	BOID_FOV = rand() % 280 + 10;
+	while (b_Stamina > b_maxStam)
+		b_Stamina = rand() % 200 + 1;
+	nearbyDistance = rand() % 300 + 1;
+
+	setPosition(XMFLOAT3(x + rand() % 50, y + rand() % 50, 0));
+	m_dead = false;
 }
 
 void Boid::createRandomDirection()
@@ -43,35 +91,46 @@ void Boid::setDirection(XMFLOAT3 direction)
 
 void Boid::update(float t, vecBoid* boidList)
 {
+
 	// create a list of nearby boids
 	vecBoid nearBoids = nearbyBoids(boidList);
 
 	if (!predator)
 	{
 		// NOTE these functions should always return a normalised vector
+		
 		XMFLOAT3  vAlignment =  calculateAlignmentVector(&nearBoids);
 		XMFLOAT3  vCohesion =   calculateCohesionVector(&nearBoids);
 		XMFLOAT3  vSeparation = calculateSeparationVector(&nearBoids);
 		XMFLOAT3  vAvoidance = calculatePredatorAvoidance(&nearBoids);
 
-		vAlignment = multiplyFloat3(vAlignment, ALIGNMENT_OFFSET);
-		vCohesion = multiplyFloat3(vCohesion, COHESION_OFFSET);
-		vSeparation = multiplyFloat3(vSeparation, SEPARATION_OFFSET);
-		vAvoidance = multiplyFloat3(vAvoidance, PREDATOR_OFFSET);
+		vAlignment = multiplyFloat3(vAlignment,		(ALIGNMENT_OFFSET	* alignmentOffsetMultiplyer));
+		vCohesion = multiplyFloat3(vCohesion,			(COHESION_OFFSET		* cohesionOffsetMultiplyer));
+		vSeparation = multiplyFloat3(vSeparation,	(SEPARATION_OFFSET * separationOffsetMultiplyer));
+		vAvoidance = multiplyFloat3(vAvoidance,		(PREDATOR_OFFSET      * avoidanceOffsetMultiplyer));
+		XMFLOAT3 steerTotal = XMFLOAT3(0,0,0);
 
-		XMFLOAT3 steerTotal = addFloat3(vSeparation, vCohesion);
-		steerTotal = addFloat3(steerTotal, vAlignment);
-		steerTotal = addFloat3(steerTotal, vAvoidance);
+
+		//check if forces are active
+		if (seperationActive)
+			steerTotal = addFloat3(steerTotal, vSeparation);
+		if (cohesionActive)
+			steerTotal = addFloat3(steerTotal, vCohesion);
+		if (alignmentActive)
+			steerTotal = addFloat3(steerTotal, vAlignment);
+		if(avoidanceActive)
+			steerTotal = addFloat3(steerTotal, vAvoidance);
+		
 		steerTotal = normaliseFloat3(steerTotal);
 
-		float totalMag = magnitudeFloat3(steerTotal);
-
-		if (totalMag > 0.9)
+		if (magnitudeFloat3(steerTotal) > 0.9)
 		{
 			steerTotal = multiplyFloat3(steerTotal, 0.1);
 			m_direction = addFloat3(steerTotal, m_direction);
 			m_direction = normaliseFloat3(m_direction);
 		}
+
+		boidBehaviour();
 	}
 	else
 	{
@@ -87,36 +146,8 @@ void Boid::update(float t, vecBoid* boidList)
 		}
 
 		//Predator Chasing/Stamina Functions/Management
-
-		if (!p_chase && speed != 0)
-		{
-			p_Stamina += 0.1f;
-		}
-		if (p_chase)
-		{
-			predatorSprint();
-			checkCaughtFish();
-		}
-		if (p_Stamina <= 0)
-		{
-			p_Stamina = 0;
-
-			if (speed > 20.0f)
-				speed--;
-
-			recovery = true;
-		}
-		if (recovery)
-		{
-			p_Stamina += 0.5f;
-
-			if (p_Stamina >= PRED_STAM_MAX)
-			{
-				p_Stamina = PRED_STAM_MAX;
-				speed = 75.0f;
-				recovery = false;
-			}
-		}
+		predatorBehaviour();
+		
 	}
 
 	XMFLOAT3 m_position_modifier = multiplyFloat3(m_direction, t * speed);
@@ -130,11 +161,11 @@ XMFLOAT3 Boid::calculateSeparationVector(vecBoid* boidList)
 	if (boidList == nullptr)
 		return seperation;
 
-	vecBoid NEARBY = nearbyBoids(boidList);
+	vecBoid nBoidList = nearbyBoids(boidList);
 
-	if (NEARBY.size() > 0)
+	if (nBoidList.size() > 0)
 	{
-		for (Boid* boid : NEARBY)
+		for (Boid* boid : nBoidList)
 		{
 			XMFLOAT3 temp = subtractFloat3(boid->m_position, this->m_position);
 			seperation = subtractFloat3(seperation, temp);
@@ -149,11 +180,11 @@ XMFLOAT3 Boid::calculateAlignmentVector(vecBoid* boidList)
 	if (boidList == nullptr)
 		return nearbyVelocity;
 
-	vecBoid NEARBY = nearbyBoids(boidList);
+	vecBoid nBoidList = nearbyBoids(boidList);
 
-	if (NEARBY.size() > 0)
+	if (nBoidList.size() > 0)
 	{
-		for (Boid* boid : NEARBY)
+		for (Boid* boid : nBoidList)
 		{
 			if (boid->predator)
 				continue;
@@ -162,8 +193,8 @@ XMFLOAT3 Boid::calculateAlignmentVector(vecBoid* boidList)
 		}
 	}
 
-	nearbyVelocity = divideFloat3(nearbyVelocity, NEARBY.size());
-	nearbyVelocity = divideFloat3(nearbyVelocity, 8);
+	nearbyVelocity = divideFloat3(nearbyVelocity, nBoidList.size());
+	//	nearbyVelocity = divideFloat3(nearbyVelocity, 8);
 	return normaliseFloat3(nearbyVelocity); // return the normalised (average) direction of nearby drawables
 }
 
@@ -174,14 +205,12 @@ XMFLOAT3 Boid::calculateCohesionVector(vecBoid* boidList)
 	if (boidList == nullptr)
 		return nearbyCentre;
 
-	vecBoid NEARBY = nearbyBoids(boidList);
+	vecBoid nBoidList = nearbyBoids(boidList);
 
-	if (NEARBY.size() > 0)
+	if (nBoidList.size() > 0)
 	{
-		for (Boid* boid : NEARBY)
+		for (Boid* boid : nBoidList)
 		{
-
-
 			nearbyCentre = addFloat3(nearbyCentre, boid->m_position);
 
 			if (boid->predator)
@@ -189,9 +218,9 @@ XMFLOAT3 Boid::calculateCohesionVector(vecBoid* boidList)
 		}
 	}
 
-	nearbyCentre = divideFloat3(nearbyCentre, NEARBY.size()-1);
+	nearbyCentre = divideFloat3(nearbyCentre, nBoidList.size());
 	nearbyCentre = subtractFloat3(nearbyCentre, this->m_position);
-	nearbyCentre = divideFloat3(nearbyCentre, 100);
+	//nearbyCentre = divideFloat3(nearbyCentre, 100);
 
 	return normaliseFloat3(nearbyCentre); // nearby is the direction to where the other drawables are
 }
@@ -202,15 +231,14 @@ XMFLOAT3 Boid::calculatePredatorAvoidance(vecBoid* boidList)
 	if (boidList == nullptr)
 		return avoidance;
 
-		vecBoid NEARBY = nearbyBoids(boidList);
-		if (NEARBY.size() > 0)
+		vecBoid nBoidList = nearbyBoids(boidList);
+		if (nBoidList.size() > 0)
 		{
-			for (Boid* boid : NEARBY)
+			for (Boid* boid : nBoidList)
 			{
 				if (boid->predator)
 				{
 					avoidance = subtractFloat3(boid->m_position, this->m_position);
-
 				}
 			}
 		}
@@ -221,44 +249,72 @@ XMFLOAT3 Boid::calculatePredatorAvoidance(vecBoid* boidList)
 
 XMFLOAT3 Boid::calculateTarget(vecBoid* boidList)
 {
-	vecBoid NEARBY = nearbyBoids(boidList);
+	Boid* prevTarg = nullptr;
 
-	float closest = 10000000000000.0f;
+	if (target != nullptr)
+		prevTarg = target;
+
+	vecBoid nBoidList = nearbyBoids(boidList);
+
+	float closest = INFINITY;
 	float current = 0.0f;
-	XMFLOAT3 temp = XMFLOAT3(0,0,0);
+	XMFLOAT3 targetPos = XMFLOAT3(0,0,0);
 
-	if (NEARBY.size() > 0)
+	if (nBoidList.size() > 0)
 	{
-		for (Boid* boid : NEARBY)
+		for (Boid* boid : nBoidList)
 		{
 			if (boid->predator)
+				continue;
+			
+			if (boid->b_chased)
 				continue;
 
 			current = distanceFloat3(this->m_position, boid->m_position);
 
 			if (current < closest)
 			{
-				closest = distanceFloat3(this->m_position, boid->m_position);
-				temp = subtractFloat3(boid->m_position, this->m_position);
+				closest = current;
+				targetPos = subtractFloat3(boid->m_position, this->m_position);
+				
+				if (target != nullptr)
+				{
+					target->b_chased = false;
+				}
 				target = boid;
 			}
 		}
+	}
+	else
+	{
+		target = nullptr;
 	}
 
 	if (closest < 25.0f)
 	{
 		p_chase = true;
+		
+		if (target != nullptr)
+			target->b_chased = true;
+	}
+	else
+	{
+		p_chase = false;
+
+		if (target != nullptr)	
+			target->b_chased = false;
 	}
 
-	return normaliseFloat3(temp); // nearby is the direction to where the other drawables are
+
+	return normaliseFloat3(targetPos); // nearby is the direction to where the other drawables are
 }
 
 void Boid::predatorSprint()
 {
-	if (p_Stamina > 0.0f)
+	if (p_Stamina > 0.0f && !recovery)
 	{
-		if (speed < maxSpeed)
-			speed += 0.2f;
+		if (speed < p_speedMax)
+			speed += 0.4f;
 
 		p_Stamina -= 1.0f;
 	}
@@ -266,16 +322,109 @@ void Boid::predatorSprint()
 		p_chase = false;
 }
 
+void Boid::predatorBehaviour()
+{
+	if (!p_chase && !recovery)
+	{
+		p_Stamina += 0.1f;
+	}
+
+	if (p_chase)
+	{
+		predatorSprint();
+		checkCaughtFish();
+	}
+
+	if (p_Stamina <= 0)
+	{
+		p_Stamina = 0;
+
+		while (speed > 20.0f)
+			speed--;
+
+		recovery = true;
+	}
+
+	if (recovery)
+	{
+		p_Stamina += 0.5f;
+
+		if (p_Stamina >= p_maxStam)
+		{
+			p_Stamina = p_maxStam;
+			speed = 60.0f;
+			recovery = false;
+		}
+
+	}
+
+}
+
 void Boid::checkCaughtFish()
 {
-	if(distanceFloat3(this->m_position, target->m_position) < 2.0f)
+	if (target != nullptr)
 	{
-		target->m_position.x = 10000000000;
-		target->m_position.y = 10000000000;
-		p_chase = false;
+		if (distanceFloat3(this->m_position, target->m_position) < 2.0f)
+		{
+			target->m_position.x = INFINITY;
+			target->m_position.y = INFINITY;
+			p_chase = false;
+			m_dead = true;
+			
+			g_deadBoids.push_back(target);
+		}
 	}
 }
 
+void Boid::boidSprint()
+{
+	if (b_Stamina > 0.0f)
+	{
+		if (speed < b_speedMax)
+			speed += 0.2f;
+
+		b_Stamina -= 1.0f;
+	}
+	else
+	{
+		b_prevSpeed = speed;
+		b_chased = false;
+	}
+		
+}
+
+void Boid::boidBehaviour()
+{
+	if (!b_chased && !recovery)
+	{
+		b_Stamina += 0.1f;
+	}
+	if (b_chased)
+	{
+		boidSprint();
+	}
+	if (b_Stamina <= 0)
+	{
+		b_Stamina = 0;
+
+		while (speed > 10.0f)
+			speed--;
+
+		recovery = true;
+	}
+	if (recovery)
+	{
+		b_Stamina += 0.5f;
+
+		if (b_Stamina >= b_maxStam)
+		{
+			b_Stamina = b_maxStam;
+			speed = b_prevSpeed;
+			b_prevSpeed = 0.f;
+			recovery = false;
+		}
+	}
+}
 
 // use but don't alter the methods below
 
@@ -322,7 +471,7 @@ XMFLOAT3 Boid::divideFloat3(XMFLOAT3& f1, const float scalar)
 float Boid::distanceFloat3(XMFLOAT3& f1, XMFLOAT3& f2)
 {
 	// Calculating distance
-	return sqrt(pow(f2.x - f1.x, 2) +pow(f2.y - f1.y, 2) * 1.0);
+	return sqrt(pow(f2.x - f1.x, 2) +pow(f2.y - f1.y, 2));
 }
 
 float Boid::magnitudeFloat3(XMFLOAT3& f1)
@@ -357,18 +506,18 @@ vecBoid Boid::nearbyBoids(vecBoid* boidList)
 		XMFLOAT3 vB = *(boid->getPosition());
 		XMFLOAT3 vDiff = subtractFloat3(m_position, vB);
 		float l = magnitudeFloat3(vDiff);
-		if (l < NEARBY_DISTANCE) {
+		if (l < nearbyDistance) {
 			nearBoids.push_back(boid);
 		}
 
 		XMFLOAT3 toOtherBoid = subtractFloat3(boid->m_position, this->m_position);
 
-		if (magnitudeFloat3(toOtherBoid) >= NEARBY_DISTANCE)
+		if (magnitudeFloat3(toOtherBoid) >= nearbyDistance)
 			continue;
 
 		// Is the boid in our field of view?
 		float angle = abs(atan2(m_velocity.x, m_velocity.y) - atan2(toOtherBoid.x, toOtherBoid.y));
-		angle *= 80 / 3.14;
+		angle *= 90 / 3.14;
 
 		if (angle > BOID_FOV)
 			continue;
@@ -379,7 +528,7 @@ vecBoid Boid::nearbyBoids(vecBoid* boidList)
 	return nearBoids;
 }
 
-void Boid::checkIsOnScreenAndFix(const XMMATRIX&  view, const XMMATRIX&  proj, vecBoid* boidList)
+void Boid::checkIsOnScreenAndFix(const XMMATRIX&  view, const XMMATRIX&  proj)
 {
 	XMFLOAT4 v4;
 	v4.x = m_position.x;
@@ -404,8 +553,7 @@ void Boid::checkIsOnScreenAndFix(const XMMATRIX&  view, const XMMATRIX&  proj, v
 		{
 			v4.x = -v4.x + (fOffset * v.x);
 		}
-
-		if (v.y < -1 || v.y > 1) 
+		else if (v.y < -1 || v.y > 1) 
 		{
 			v4.y = -v4.y + (fOffset * v.y);
 		}

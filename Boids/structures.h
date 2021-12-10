@@ -114,7 +114,6 @@ struct Light
 	//----------------------------------- (16 byte boundary)
 };  // Total:                              80 bytes ( 5 * 16 )
 
-
 struct LightPropertiesConstantBuffer
 {
 	LightPropertiesConstantBuffer()

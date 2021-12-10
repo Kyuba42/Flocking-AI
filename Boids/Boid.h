@@ -4,9 +4,8 @@
 #define		SEPARATION_OFFSET		1.0f
 #define		ALIGNMENT_OFFSET		1.0f
 #define		COHESION_OFFSET			1.0f
-#define		PREDATOR_OFFSET			1.0f
+#define		PREDATOR_OFFSET		1.0f
 
-#define		PRED_STAM_MAX				200.0f
 
 class Boid :
 	public DrawableGameObject
@@ -15,16 +14,39 @@ public:
 	Boid(float SpeedMax, float ForceMax, bool Predator);
 	~Boid();
 
-	XMFLOAT3*					    getDirection() { return &m_direction; }
+	// boid traits
+	//make randomised
+	//Traits ALL should be randomised
+	float										p_maxStam = 250.0f;
+	float										b_maxStam = 0;
 
-	void									    checkIsOnScreenAndFix(const XMMATRIX&  view, const XMMATRIX&  proj, vecBoid* boidList);
+	float										speed;// = 75.0f;
+	float										b_prevSpeed = 0;
+	float										p_speedMax = 90;
+	float										b_speedMax = 0;
+
+	float										BOID_FOV = 0;// = 180.0f;
+	float										b_Stamina = 0;// = 250.0f;
+	float										nearbyDistance = 0;// = 100.0f;	// how far boids can see
+
+	bool										recovery = false;
+
+	float										p_Stamina = 200.0f;
+	bool										m_dead = false;
+
+	XMFLOAT3*							getDirection() { return &m_direction; }
+
+	void									    checkIsOnScreenAndFix(const XMMATRIX&  view, const XMMATRIX&  proj);
 	void									    update(float t, vecBoid* drawList);
+
+	void										StartTest(int x, int y);
+	bool										predator;
 
 protected:
 	void								        setDirection(XMFLOAT3 direction);
 	void								        createRandomDirection();
 
-	vecBoid								nearbyBoids(vecBoid* boidList);
+	vecBoid									nearbyBoids(vecBoid* boidList);
 
 	//Calculate Flocking
 	XMFLOAT3							calculateSeparationVector(vecBoid* drawList);
@@ -35,8 +57,16 @@ protected:
 
 	//Predator Behaviours
 	void										predatorSprint();
+	void										predatorBehaviour();
 	void										checkCaughtFish();
 	Boid*									target;
+	bool										p_chase = false;
+	bool										b_chased = false;
+
+	//Boid Behaviorus
+	void										boidSprint();
+	void										boidBehaviour();
+	
 	//Float Mathematics
 	XMFLOAT3							addFloat3(XMFLOAT3& f1, XMFLOAT3& f2);
 	XMFLOAT3							subtractFloat3(XMFLOAT3& f1, XMFLOAT3& f2);
@@ -51,21 +81,5 @@ protected:
 	XMFLOAT3							m_velocity;
 	XMFLOAT3							m_acceleration;
 	
-	//Traits
-	float										speed =  75.0f;
-	float										maxSpeed = 100.0f;
-	float										stamina = 10.0f;
-	float										BOID_FOV = 180.0f;
-
-	bool										m_offscreen;
-	bool										predator;
-	bool										p_chase = false;
-	bool										reflecting = false;
-	bool										recovery = false;
-
-	float										p_Stamina = 200.0f;
-	float										b_Stamina = 250.0f;
-	//unsigned int*						m_nearbyDrawables;
-
 };
 

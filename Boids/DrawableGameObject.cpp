@@ -171,7 +171,7 @@ void DrawableGameObject::setPosition(XMFLOAT3 position)
 void DrawableGameObject::update(float t)
 {
 	//m_scale should be 1.0 by default!
-	// e.g. for the predator, set its scale to be 4
+	// e.g. for the predator, set its scale to be 2
 	XMMATRIX mScale = XMMatrixScaling(m_scale, m_scale, m_scale);
 
 	// Cube:  Rotate around origin

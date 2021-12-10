@@ -16,6 +16,11 @@
 
 #include "main.h"
 
+#include "imgui.h"
+#include "imgui_impl_win32.h"
+#include "imgui_impl_dx11.h"
+
+
 #include <time.h>  
 #include "Boid.h"
 
@@ -73,12 +78,14 @@ vecBoid				         g_Boids;
 float                               startX = 0.0f;
 float                               startY = 0.0f;
 
+extern LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 void placeFish()
 {
     int x = 0;
     int y = 0;
 
-    for (int i = 0; i < 100; i++)
+    for (int i = 0; i < 150; i++)
     {
         HRESULT hr;
 
@@ -100,23 +107,15 @@ void placeFish()
 
 void placePredator()
 {
-    int x = 0;
-    int y = 0;
+    HRESULT hr;
 
-    //for (int i = 0; i < 5; i++)
-   // {
-        HRESULT hr;
+    Boid* fish = new Boid(2.0f, 1.0f, true);
+    hr = fish->initMesh(g_pd3dDevice, g_pImmediateContext);
+    if (FAILED(hr))
+        return;
 
-        Boid* fish = new Boid(2.0f, 1.0f, true);
-        hr = fish->initMesh(g_pd3dDevice, g_pImmediateContext);
-        if (FAILED(hr))
-            return;
-
-        fish->setPosition(XMFLOAT3(0,50,0));
-        g_Boids.push_back(fish);
-
-     //   x++;
-  //  }
+    fish->setPosition(XMFLOAT3(0,50,0));
+    g_Boids.push_back(fish);
 }
 
 //--------------------------------------------------------------------------------------
@@ -180,8 +179,8 @@ HRESULT InitWindow( HINSTANCE hInstance, int nCmdShow )
         return E_FAIL;
 
     // Create window
-	int width = 1024;
-	int height = 768;
+	int width = 1920;
+	int height = 1080;
     g_hInst = hInstance;
     RECT rc = { 0, 0, width, height };
 
@@ -434,6 +433,12 @@ HRESULT InitDevice()
 		return hr;
 	}
 
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    ImGui_ImplWin32_Init(g_hWnd);
+    ImGui_ImplDX11_Init(g_pd3dDevice, g_pImmediateContext);
+    ImGui::StyleColorsDark();
 
     return S_OK;
 }
@@ -613,6 +618,9 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     PAINTSTRUCT ps;
     HDC hdc;
 
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return 0;
+
     switch( message )
     {
 	case WM_LBUTTONDOWN:
@@ -636,6 +644,8 @@ LRESULT CALLBACK WndProc( HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam 
     default:
         return DefWindowProc( hWnd, message, wParam, lParam );
     }
+
+   
 
     return 0;
 }
@@ -682,6 +692,22 @@ void setupTransformConstantBuffer(const unsigned int index)
 
 }
 
+
+//Extern Globals for ImGui
+extern vector<Boid*>	g_deadBoids;
+
+extern bool					alignmentActive;
+extern bool					cohesionActive;
+extern bool					seperationActive;
+extern bool					avoidanceActive;
+
+extern int  	                alignmentOffsetMultiplyer;
+extern int	                    cohesionOffsetMultiplyer;
+extern int	                    separationOffsetMultiplyer;
+extern int	                    avoidanceOffsetMultiplyer;
+
+extern int                    p_Kills;
+
 //--------------------------------------------------------------------------------------
 // Render a frame
 //--------------------------------------------------------------------------------------
@@ -698,6 +724,7 @@ void Render()
 
 	float FPS60 = 1.0f / 60.0f;
 	static float cummulativeTime = 0;
+    static int p_Kills = 0;
 
 	// cap the framerate at 60 fps 
 	cummulativeTime += t;
@@ -714,17 +741,168 @@ void Render()
     // Clear the depth buffer to 1.0 (max depth)
     g_pImmediateContext->ClearDepthStencilView( g_pDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0 );
 
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    static float programTime = 0.f;
+    static float programMaxTime = 30.f;
+
+    static bool  stop = false;
+    static bool test = false;
+
+    ImGui::Begin("Boid Control Panel");
+    ImGui::Checkbox("Alignment", &alignmentActive);
+    ImGui::Checkbox("Cohesion", &cohesionActive);
+    ImGui::Checkbox("Seperation", &seperationActive);
+    ImGui::Checkbox("Avoidance", &avoidanceActive);
+    
+    ImGui::SliderInt("Alignment Weighting", &alignmentOffsetMultiplyer, 0, 10);
+    ImGui::SliderInt("Cohesion Weighting", &cohesionOffsetMultiplyer, 0, 10);
+    ImGui::SliderInt("Separation Weighting", &separationOffsetMultiplyer, 0, 10);
+    ImGui::SliderInt("Avoidance Weighting", &avoidanceOffsetMultiplyer, 0, 10);
+
+    ImGui::Text("Fish Eaten: %i", p_Kills);
+    ImGui::SliderFloat("Test Length", &programMaxTime, 1.f, 60.f);
+
+    if (g_deadBoids.size() > 0)
+        p_Kills = g_deadBoids.size();
+
+    static int DeadLastFrame = 0;
+    int DeadThisFrame = g_deadBoids.size();
+
+    static vector<float> deadBoidFOVAverage;
+    static vector<float> deadBoidSpeedAverage;
+    static vector<float> deadBoidViewDistanceAverage;
+    static vector<float> deadBoidStaminaAverage;
+
+    static float intervalTime = 6.f;
+    static float timeElapsed = 0.f;
+
+    static int dataElements = 0;
+
+    if (ImGui::Button("Start Test", ImVec2(100, 25)))
+    {
+        test = true;
+        int x = 0;
+        int y = 0;
+        int predCount = 0;
+
+        for (int i = 0; i < g_Boids.size(); i++)
+        {
+            if (!g_Boids[i]->predator)
+            {
+                if (x == 25)
+                {
+                    x = 0;
+                    y++;
+                }
+                g_Boids[i]->StartTest(x, y);
+                x++;
+            }
+            else
+            {
+                predCount++;
+                g_Boids[i]->setPosition(XMFLOAT3(0, 50, 0));
+            }
+
+        }
+
+        while (predCount < 5)
+        {
+            placePredator();
+            predCount++;
+        }
+
+        g_deadBoids.clear();
+        deadBoidFOVAverage.clear();
+        deadBoidSpeedAverage.clear();
+        deadBoidViewDistanceAverage.clear();
+        deadBoidStaminaAverage.clear();
+
+        dataElements = 0;
+        p_Kills = 0;
+        programTime = 0;
+
+        stop = false;
+
+        programTime = 0.0f;
+        timeElapsed = 0.0f;
+    }
+
+    if (programTime < programMaxTime + 1.f && test)
+        programTime += t;
+    else if(test)
+        stop = true;
+
+    // Build our data but only when our data is old, to save on some sweet sweet CPU time
+    if (DeadThisFrame > 0)
+    {
+        if (!stop)
+        {
+            timeElapsed += t;
+
+            if (timeElapsed >= intervalTime)
+            {
+                float sumFOV = 0.0f;
+                float sumSpeed = 0.0f;
+                float sumViewDistance = 0.0f;
+                float sumStamina = 0.0f;
+
+                for (int i = 0; i < g_deadBoids.size(); i++)
+                {
+                    sumFOV += g_deadBoids[i]->BOID_FOV;
+                    sumSpeed += g_deadBoids[i]->speed;
+                    sumViewDistance += g_deadBoids[i]->nearbyDistance;
+                    sumStamina += g_deadBoids[i]->b_maxStam;
+                }
+
+                sumFOV /= g_deadBoids.size();
+                sumSpeed /= g_deadBoids.size();
+                sumViewDistance /= g_deadBoids.size();
+                sumStamina /= g_deadBoids.size();
+
+                deadBoidFOVAverage.push_back(sumFOV);
+                deadBoidSpeedAverage.push_back(sumSpeed);
+                deadBoidViewDistanceAverage.push_back(sumViewDistance);
+                deadBoidStaminaAverage.push_back(sumStamina);
+
+                timeElapsed = 0.0f;
+                dataElements++;
+            }
+        }
+
+        if (dataElements > 0)
+        {
+
+            float* fov_array = &deadBoidFOVAverage[0];
+            float* speed_array = &deadBoidSpeedAverage[0];
+            float* viewDistance_array = &deadBoidViewDistanceAverage[0];
+            float* stamina_array = &deadBoidStaminaAverage[0];
+
+            ImGui::PlotHistogram("Average Dead Boid FOV", fov_array, deadBoidFOVAverage.size(), 0, "", 0.0f, 300, ImVec2(0, 100));
+            ImGui::PlotHistogram("Average Dead Boid Speed", speed_array, deadBoidSpeedAverage.size(), 0, "", 0.0f, 300, ImVec2(0, 100));
+            ImGui::PlotHistogram("Average Dead Boid ViewDistance", viewDistance_array, deadBoidViewDistanceAverage.size(), 0, "", 0.0f, 300, ImVec2(0, 100));
+            ImGui::PlotHistogram("Average Dead Boid Maximum Stamina", stamina_array, deadBoidStaminaAverage.size(), 0, "", 0.0f, 300, ImVec2(0, 100));
+        }
+    }
+
+    ImGui::End();
+    ImGui::Render();
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
 #pragma omp parallel
     {
         #pragma omp for
         for (unsigned int i = 0; i < g_Boids.size(); i++)
         {
-            g_Boids[i]->update(t, &g_Boids);
+            if(!stop)
+                g_Boids[i]->update(t, &g_Boids);
+
             XMMATRIX vp = g_View * g_Projection;
             Boid* dob = (Boid*)g_Boids[i];
 
-            dob->checkIsOnScreenAndFix(g_View, g_Projection, &g_Boids);
+            dob->checkIsOnScreenAndFix(g_View, g_Projection);
 
             setupTransformConstantBuffer(i);
             setupLightingConstantBuffer();

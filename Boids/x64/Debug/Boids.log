@@ -1,14 +1,26 @@
 ﻿  Boid.cpp
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(5,34): warning C4100: 'ForceMax': unreferenced formal parameter
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(5,18): warning C4100: 'SpeedMax': unreferenced formal parameter
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(165,59): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(192,57): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(325,13): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\Boid.cpp(382,89): warning C4100: 'boidList': unreferenced formal parameter
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(16,34): warning C4100: 'ForceMax': unreferenced formal parameter
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(16,18): warning C4100: 'SpeedMax': unreferenced formal parameter
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(66,27): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(67,23): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(68,26): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(70,28): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(71,32): warning C4244: '=': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(73,42): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(73,25): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(196,62): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(221,58): warning C4244: 'argument': conversion from 'unsigned __int64' to 'const float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\Boid.cpp(474,13): warning C4244: 'return': conversion from 'double' to 'float', possible loss of data
   main.cpp
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(94,55): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(94,38): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(104,9): warning C4189: 'y': local variable is initialized but not referenced
-C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\Boids\main.cpp(103,9): warning C4189: 'x': local variable is initialized but not referenced
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(101,55): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(101,38): warning C4244: 'argument': conversion from 'int' to 'float', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(727,26): warning C4459: declaration of 'p_Kills' hides global declaration
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(709,31): message : see declaration of 'p_Kills'
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(769,37): warning C4267: '=': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(772,43): warning C4267: 'initializing': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(883,129): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(884,135): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(885,156): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
+C:\Users\avita\Desktop\Fish Schooling Complete\Boids\main.cpp(886,149): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
   Generating Code...
-  Boids.vcxproj -> C:\Users\avita\Desktop\Fish Schooling 3.0 Student - 15 marks\x64\Debug\Boids.exe
+  Boids.vcxproj -> C:\Users\avita\Desktop\Fish Schooling Complete\x64\Debug\Boids.exe
